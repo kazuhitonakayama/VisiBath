@@ -1,6 +1,9 @@
 # App
 This app visualizes the availability of bathrooms in real time.
 
+## Line-SDK-Bot
+Thanks LINE (https://github.com/line/line-bot-sdk-python)
+
 ## How to make
 - Access LINE Developer console
 - Access Messaging API Mode
