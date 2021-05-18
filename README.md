@@ -14,3 +14,4 @@ Thanks LINE (https://github.com/line/line-bot-sdk-python)
 
 ## Reference
 https://qiita.com/konikoni428/items/fd1ab5993bc5526726bb
+https://github.com/zgw426/LINEBot-FlashCard
