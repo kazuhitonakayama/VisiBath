@@ -71,8 +71,9 @@ def lambda_handler(event, context):
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event): # 引数のeventにAPIからのレスポンスが入っている
     text = event.message.text # 送信されたメッセージを取得
-    line_bot_api.reply_message(event.reply_token, TextSendMessage(text)) # トークンと送信テキストをTextSendMessage(text)にて指定。ここではecho botのため、送信された内容と同じ内容を返すようにしている。
-    
+    returnUserid = event.source.user_id # 送信されたメッセージを取得
+    line_bot_api.reply_message(event.reply_token, TextSendMessage("下のメニューから選択してね！")) # トークンと送信テキストをTextSendMessage(text)にて指定。ここではecho botのため、送信された内容と同じ内容を返すようにしている。
+
 @handler.add(PostbackEvent)
 def on_postback(event):
     # DynamoDBにデータを送信する
@@ -81,36 +82,57 @@ def on_postback(event):
     
     # PostBackを取得
     postback_msg = event.postback.data
+    postback_user_id = event.source.user_id
 
     if postback_msg == 'f_out':
-        line_bot_api.reply_message(
-            event.reply_token,
-            messages=TextSendMessage(text='今から女風呂を出るよ！')
-        )
-        # DynamoDBへのPut処理実行
-        option = {
-            'Key': {
-                'building': 1,
-                'gender': 1
-            },
-            'UpdateExpression': 'set #vacancy = :v',
-            'ExpressionAttributeNames': {
-                '#vacancy': 'vacancy'
-            },
-            'ExpressionAttributeValues': {
-                ':v': False
+        #DynamoDBへのgetItem処理実行
+        response = table.get_item(Key={'building': 1, 'gender': 1})
+        if response['Item']['vacancy'] == True and response['Item']['user_id'] == postback_user_id: # 誰かが入っている、かつ、それが他人でないとき(自分)のみ空室にできる
+            line_bot_api.reply_message(
+                event.reply_token,
+                messages=TextSendMessage(text='お風呂を「空き」にしたよ！')
+            )
+            # DynamoDBへのPut処理実行
+            option = {
+                'Key': {
+                    'building': 1,
+                    'gender': 1
+                },
+                'UpdateExpression': 'set #vacancy = :v, #user_id = :u',
+                'ExpressionAttributeNames': {
+                    '#vacancy': 'vacancy',
+                    '#user_id': 'user_id'
+                },
+                'ExpressionAttributeValues': {
+                    ':v': False,
+                    ':u': postback_user_id
+                }
             }
-        }
-        table.update_item(**option)
+            table.update_item(**option)
+        elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # 誰かが入っている、かつ、それが他人のときは
+            line_bot_api.reply_message(
+                event.reply_token,
+                messages=TextSendMessage(text='他の人が入っているときは「out」を選択できません..！')
+            )
+        elif response['Item']['vacancy'] == False: # 誰かが入っている、かつ、それが他人のときは
+            line_bot_api.reply_message(
+                event.reply_token,
+                messages=TextSendMessage(text='お風呂を「空き」にしたよ！')
+            )
     elif postback_msg == 'f_check':
         # DynamoDBへのgetItem処理実行
         response = table.get_item(Key={'building': 1, 'gender': 1})
-        if response['Item']['vacancy'] == True:
+        if response['Item']['vacancy'] == True and response['Item']['user_id'] == postback_user_id: # もし自分が入浴中になっていたら
+            line_bot_api.reply_message(
+                event.reply_token,
+                messages=TextSendMessage(text="女風呂はあなたが入浴中になっています！")
+            )
+        elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # もし自分以外の誰かが入浴中になっていたら
             line_bot_api.reply_message(
                 event.reply_token,
                 messages=TextSendMessage(text="女風呂は誰かが入浴中です！")
             )
-        else:
+        elif response['Item']['vacancy'] == False:
             line_bot_api.reply_message(
                 event.reply_token,
                 messages=TextSendMessage(text="女風呂は誰も入浴してません！入れます！")
@@ -118,60 +140,87 @@ def on_postback(event):
     elif postback_msg == 'f_in':
         # DynamoDBへのgetItem処理実行
         response = table.get_item(Key={'building': 1, 'gender': 1})
-        if response['Item']['vacancy'] == True: # もし誰かが入浴中なら
+        if response['Item']['vacancy'] == True and response['Item']['user_id'] == postback_user_id: # もし誰かが入浴中かつその人が自分なら
+            line_bot_api.reply_message(
+                event.reply_token,
+                messages=TextSendMessage(text="もうあなたが「入浴中」になってます！ゆっくり浸かってきてね！")
+            )
+        elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # もし自分ではない他の誰かが入浴中なら
             line_bot_api.reply_message(
                 event.reply_token,
                 messages=TextSendMessage(text="女風呂は誰かが入浴中なので今は入浴できません..！上がるまで少しお待ちを🙇‍♂")
             )
-        else: # 誰も入浴していないなら
+        elif response['Item']['vacancy'] == False: # 誰も入浴していないなら
             # DynamoDBへのPut処理実行
             option = {
                 'Key': {
                     'building': 1,
                     'gender': 1
                 },
-                'UpdateExpression': 'set #vacancy = :v',
+                'UpdateExpression': 'set #vacancy = :v, #user_id = :u',
                 'ExpressionAttributeNames': {
-                    '#vacancy': 'vacancy'
+                    '#vacancy': 'vacancy',
+                    '#user_id': 'user_id'
                 },
                 'ExpressionAttributeValues': {
-                    ':v': True
+                    ':v': True,
+                    ':u': postback_user_id
                 }
             }
             table.update_item(**option)
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text="入浴中にしたよ！")
+                messages=TextSendMessage(text="あなたが女風呂に入浴中にしたよ！")
             )
     elif postback_msg == 'm_out':
-        line_bot_api.reply_message(
-            event.reply_token,
-            messages=TextSendMessage(text='今から男風呂を出るよ！')
-        )
-        # DynamoDBへのPut処理実行
-        option = {
-            'Key': {
-                'building': 1,
-                'gender': 2
-            },
-            'UpdateExpression': 'set #vacancy = :v',
-            'ExpressionAttributeNames': {
-                '#vacancy': 'vacancy'
-            },
-            'ExpressionAttributeValues': {
-                ':v': False
+        #DynamoDBへのgetItem処理実行
+        response = table.get_item(Key={'building': 1, 'gender': 2})
+        if response['Item']['vacancy'] == True and response['Item']['user_id'] == postback_user_id: # 誰かが入っている、かつ、それが他人でないとき(自分)のみ空室にできる
+            line_bot_api.reply_message(
+                event.reply_token,
+                messages=TextSendMessage(text='お風呂を「空き」にしたよ！')
+            )
+            # DynamoDBへのPut処理実行
+            option = {
+                'Key': {
+                    'building': 1,
+                    'gender': 2
+                },
+                'UpdateExpression': 'set #vacancy = :v, #user_id = :u',
+                'ExpressionAttributeNames': {
+                    '#vacancy': 'vacancy',
+                    '#user_id': 'user_id'
+                },
+                'ExpressionAttributeValues': {
+                    ':v': False,
+                    ':u': postback_user_id
+                }
             }
-        }
-        table.update_item(**option)
+            table.update_item(**option)
+        elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # 誰かが入っている、かつ、それが他人のときは
+            line_bot_api.reply_message(
+                event.reply_token,
+                messages=TextSendMessage(text='他の人が入っているときは「out」を選択できません..！')
+            )
+        elif response['Item']['vacancy'] == False: # 誰も入っていないとき
+            line_bot_api.reply_message(
+                event.reply_token,
+                messages=TextSendMessage(text='お風呂を「空き」にしたよ！')
+            )
     elif postback_msg == 'm_check':
         # DynamoDBへのgetItem処理実行
         response = table.get_item(Key={'building': 1, 'gender': 2})
-        if response['Item']['vacancy'] == True:
+        if response['Item']['vacancy'] == True and response['Item']['user_id'] == postback_user_id: # もし自分が入浴中になっていたら
+            line_bot_api.reply_message(
+                event.reply_token,
+                messages=TextSendMessage(text="男風呂はあなたが入浴中になっています！")
+            )
+        elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # もし自分以外の誰かが入浴中になっていたら
             line_bot_api.reply_message(
                 event.reply_token,
                 messages=TextSendMessage(text="男風呂は誰かが入浴中です！")
             )
-        else:
+        elif response['Item']['vacancy'] == False:
             line_bot_api.reply_message(
                 event.reply_token,
                 messages=TextSendMessage(text="男風呂は誰も入浴してません！入れます！")
@@ -180,28 +229,35 @@ def on_postback(event):
     elif postback_msg == 'm_in':
         # DynamoDBへのgetItem処理実行
         response = table.get_item(Key={'building': 1, 'gender': 2})
-        if response['Item']['vacancy'] == True: # もし誰かが入浴中なら
+        if response['Item']['vacancy'] == True and response['Item']['user_id'] == postback_user_id: # もし誰かが入浴中かつその人が自分なら
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text="男風呂は誰かが入浴中なので今は入浴できません..！上がるまで少しお待ちを🙇‍♂️")
+                messages=TextSendMessage(text="もうあなたが「入浴中」になってます！ゆっくり浸かってきてね！")
             )
-        else: # 誰も入浴していないなら
+        elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # もし自分ではない他の誰かが入浴中なら
+            line_bot_api.reply_message(
+                event.reply_token,
+                messages=TextSendMessage(text="女風呂は誰かが入浴中なので今は入浴できません..！上がるまで少しお待ちを🙇‍♂")
+            )
+        elif response['Item']['vacancy'] == False: # 誰も入浴していないなら
             # DynamoDBへのPut処理実行
             option = {
                 'Key': {
                     'building': 1,
                     'gender': 2
                 },
-                'UpdateExpression': 'set #vacancy = :v',
+                'UpdateExpression': 'set #vacancy = :v, #user_id = :u',
                 'ExpressionAttributeNames': {
-                    '#vacancy': 'vacancy'
+                    '#vacancy': 'vacancy',
+                    '#user_id': 'user_id'
                 },
                 'ExpressionAttributeValues': {
-                    ':v': True
+                    ':v': True,
+                    ':u': postback_user_id
                 }
             }
             table.update_item(**option)
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text="入浴中にしたよ！")
+                messages=TextSendMessage(text="あなたが男風呂に入浴中にしたよ！")
             )
