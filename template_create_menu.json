@@ -1,0 +1,93 @@
+curl -v -X POST https://api.line.me/v2/bot/richmenu \
+-H 'Authorization: Bearer {my-own-channel-access-token}' \
+-H 'Content-Type: application/json' \
+-d \
+'{
+    "size": {
+      "width": 2500,
+      "height": 1686
+    },
+    "selected": false,
+    "name": "VisiBath",
+    "chatBarText": "Choose Menu♨🛁",
+    "areas": [
+      {
+        "bounds": {
+          "x": 0,
+          "y": 840,
+          "width": 830,
+          "height": 840
+        },
+        "action": {
+          "type": "postback",
+          "data": "m_out",
+          "displayText": "男性風呂を出る、を選択しました！"
+        }
+      },
+      {
+        "bounds": {
+          "x": 830,
+          "y": 840,
+          "width": 830,
+          "height": 840
+        },
+        "action": {
+          "type": "postback",
+          "data": "m_check",
+          "displayText": "男性風呂の空きを確認する、を選択しました！"
+        }
+      },
+      {
+        "bounds": {
+          "x": 1660,
+          "y": 840,
+          "width": 830,
+          "height": 840
+        },
+        "action": {
+          "type": "postback",
+          "data": "m_in",
+          "displayText": "男性風呂に入る、を選択しました！"
+        }
+      },
+      {
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 830,
+          "height": 840
+        },
+        "action": {
+          "type": "postback",
+          "data": "f_out",
+          "displayText": "女性風呂を出る、を選択しました！"
+        }
+      },
+      {
+        "bounds": {
+          "x": 830,
+          "y": 0,
+          "width": 830,
+          "height": 840
+        },
+        "action": {
+          "type": "postback",
+          "data": "f_check",
+          "displayText": "女性風呂の空きを確認する、を選択しました！"
+        }
+      },
+      {
+        "bounds": {
+          "x": 1660,
+          "y": 0,
+          "width": 830,
+          "height": 840
+        },
+        "action": {
+          "type": "postback",
+          "data": "f_in",
+          "displayText": "女性風呂に入る、を選択しました！"
+        }
+      }
+   ]
+}'
