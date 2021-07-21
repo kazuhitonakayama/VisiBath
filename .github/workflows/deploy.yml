@@ -28,11 +28,12 @@ jobs:
       # Runs a single command using the runners shell
       - run: zip -r package.zip ./*
       - run: pip3 install awscli
-      - run: aws lambda update-function-code --function-name visibath --zip-file fileb://package.zip --publish
-        env:
-            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-            AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            AWS_DEFAULT_REGION: ap-northeast-1
+#       - run: aws lambda update-function-code --function-name visibath --zip-file fileb://package.zip --publish
+      - run: echo "🍏 This job's status is ${{ job.status }}."
+#         env:
+#             AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#             AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#             AWS_DEFAULT_REGION: ap-northeast-1
       
 
       # Runs a set of commands using the runners shell
