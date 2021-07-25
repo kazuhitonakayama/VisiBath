@@ -1,5 +1,7 @@
 import os
 import sys
+# datetimeオブジェクトのインポート
+import datetime
 # DynamoDBとの接続
 import boto3, json
 # 例外処理のメソッドをインポート
@@ -84,9 +86,13 @@ def on_postback(event):
     postback_msg = event.postback.data
     postback_user_id = event.source.user_id
 
+    # 現在の時刻を取得
+    current_time = datetime.datetime.now( )
+
     if postback_msg == 'f_out':
         #DynamoDBへのgetItem処理実行
         response = table.get_item(Key={'building': 1, 'gender': 1})
+        # 現在の時刻取得
         if response['Item']['vacancy'] == True and response['Item']['user_id'] == postback_user_id: # 誰かが入っている、かつ、それが他人でないとき(自分)のみ空室にできる
             line_bot_api.reply_message(
                 event.reply_token,
@@ -98,14 +104,16 @@ def on_postback(event):
                     'building': 1,
                     'gender': 1
                 },
-                'UpdateExpression': 'set #vacancy = :v, #user_id = :u',
+                'UpdateExpression': 'set #vacancy = :v, #user_id = :u, #time = :t',
                 'ExpressionAttributeNames': {
                     '#vacancy': 'vacancy',
-                    '#user_id': 'user_id'
+                    '#user_id': 'user_id',
+                    '#time': 'time'
                 },
                 'ExpressionAttributeValues': {
                     ':v': False,
-                    ':u': postback_user_id
+                    ':u': postback_user_id,
+                    ':t': current_time
                 }
             }
             table.update_item(**option)
@@ -157,14 +165,16 @@ def on_postback(event):
                     'building': 1,
                     'gender': 1
                 },
-                'UpdateExpression': 'set #vacancy = :v, #user_id = :u',
+                'UpdateExpression': 'set #vacancy = :v, #user_id = :u, #time = :t',
                 'ExpressionAttributeNames': {
                     '#vacancy': 'vacancy',
-                    '#user_id': 'user_id'
+                    '#user_id': 'user_id',
+                    '#time': 'time'
                 },
                 'ExpressionAttributeValues': {
                     ':v': True,
-                    ':u': postback_user_id
+                    ':u': postback_user_id,
+                    ':t': current_time
                 }
             }
             table.update_item(**option)
@@ -186,14 +196,16 @@ def on_postback(event):
                     'building': 1,
                     'gender': 2
                 },
-                'UpdateExpression': 'set #vacancy = :v, #user_id = :u',
+                'UpdateExpression': 'set #vacancy = :v, #user_id = :u, #time = :t',
                 'ExpressionAttributeNames': {
                     '#vacancy': 'vacancy',
-                    '#user_id': 'user_id'
+                    '#user_id': 'user_id',
+                    '#time': 'time'
                 },
                 'ExpressionAttributeValues': {
                     ':v': False,
-                    ':u': postback_user_id
+                    ':u': postback_user_id,
+                    ':t': current_time
                 }
             }
             table.update_item(**option)
@@ -249,11 +261,13 @@ def on_postback(event):
                 'UpdateExpression': 'set #vacancy = :v, #user_id = :u',
                 'ExpressionAttributeNames': {
                     '#vacancy': 'vacancy',
-                    '#user_id': 'user_id'
+                    '#user_id': 'user_id',
+                    '#time': 'time'
                 },
                 'ExpressionAttributeValues': {
                     ':v': True,
-                    ':u': postback_user_id
+                    ':u': postback_user_id,
+                    ':t': current_time
                 }
             }
             table.update_item(**option)
