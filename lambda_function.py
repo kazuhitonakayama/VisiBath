@@ -101,7 +101,7 @@ def on_postback(event):
 
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text='お風呂を「空き」にしたよ！' + seconds_of_diff + '前にね')
+                messages=TextSendMessage(text='お風呂を「空き」にしたよ！')
             )
             # DynamoDBへのPut処理実行
             option = {
