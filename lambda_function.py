@@ -139,7 +139,7 @@ def on_postback(event):
             integer_of_diff = math.floor(diff_between_current_and_past / 60) # 秒数を分に変換する
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text="女風呂はあなたが入浴中になっています！" + 'あなたは' + integer_of_diff + '前に入浴し始めました！')
+                messages=TextSendMessage(text='女風呂はあなたが入浴中になっています！' + 'あなたは' + integer_of_diff + '前に入浴し始めました！')
             )
         elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # もし自分以外の誰かが入浴中になっていたら
             line_bot_api.reply_message(
