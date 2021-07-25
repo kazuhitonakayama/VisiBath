@@ -96,7 +96,7 @@ def on_postback(event):
         # 現在の時刻取得
         if response['Item']['vacancy'] == True and response['Item']['user_id'] == postback_user_id: # 誰かが入っている、かつ、それが他人でないとき(自分)のみ空室にできる
             diff_between_current_and_past = current_time - response['Item']['time']
-            seconds_of_diff = diff_between_current_and_past
+            seconds_of_diff = diff_between_current_and_past.total_seconds()
 
             line_bot_api.reply_message(
                 event.reply_token,
