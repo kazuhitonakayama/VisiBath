@@ -87,8 +87,7 @@ def on_postback(event):
     postback_user_id = event.source.user_id
 
     # 現在の時刻を取得
-    raw_current_time = datetime.now()
-    current_time = raw_current_time.isoformat(timespec='seconds')
+    current_time = datetime.now()
 
     if postback_msg == 'f_out':
         #DynamoDBへのgetItem処理実行
