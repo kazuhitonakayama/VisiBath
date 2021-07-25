@@ -96,10 +96,10 @@ def on_postback(event):
         # 現在の時刻取得
         if response['Item']['vacancy'] == True and response['Item']['user_id'] == postback_user_id: # 誰かが入っている、かつ、それが他人でないとき(自分)のみ空室にできる
             diff_between_current_and_past = datetime.strptime(current_time,'%Y-%m-%dT%H:%M:%S') - datetime.strptime(response['Item']['time'],'%Y-%m-%dT%H:%M:%S')
-            seconds_of_diff = diff_between_current_and_past.seconds()
+            # seconds_of_diff = diff_between_current_and_past.seconds()
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text='お風呂を「空き」にしたよ！' + seconds_of_diff + '前にしたよ')
+                messages=TextSendMessage(text='お風呂を「空き」にしたよ！' + diff_between_current_and_past + '前にしたよ')
             )
             # DynamoDBへのPut処理実行
             option = {
