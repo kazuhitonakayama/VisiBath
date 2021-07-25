@@ -99,7 +99,7 @@ def on_postback(event):
             # seconds_of_diff = diff_between_current_and_past.seconds()
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text='お風呂を「空き」にしたよ！' + diff_between_current_and_past + '前にしたよ')
+                messages=TextSendMessage(text='お風呂を「空き」にしたよ！')
             )
             # DynamoDBへのPut処理実行
             option = {
