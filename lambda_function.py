@@ -1,7 +1,7 @@
 import os
 import sys
 # datetimeオブジェクトのインポート
-import datetime
+from datetime import datetime
 # DynamoDBとの接続
 import boto3, json
 # 例外処理のメソッドをインポート
