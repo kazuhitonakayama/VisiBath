@@ -258,7 +258,7 @@ def on_postback(event):
                     'building': 1,
                     'gender': 2
                 },
-                'UpdateExpression': 'set #vacancy = :v, #user_id = :u',
+                'UpdateExpression': 'set #vacancy = :v, #user_id = :u, #time = :t',
                 'ExpressionAttributeNames': {
                     '#vacancy': 'vacancy',
                     '#user_id': 'user_id',
