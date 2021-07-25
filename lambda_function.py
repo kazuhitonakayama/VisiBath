@@ -87,16 +87,15 @@ def on_postback(event):
     postback_user_id = event.source.user_id
 
     # 現在の時刻を取得
-    raw_current_time = datetime.today()
-    current_time = raw_current_time.isoformat(timespec='seconds')
+    current_time = datetime.now()
 
     if postback_msg == 'f_out':
         #DynamoDBへのgetItem処理実行
         response = table.get_item(Key={'building': 1, 'gender': 1})
         # 現在の時刻取得
         if response['Item']['vacancy'] == True and response['Item']['user_id'] == postback_user_id: # 誰かが入っている、かつ、それが他人でないとき(自分)のみ空室にできる
-            diff_between_current_and_past = current_time - response['Item']['time']
-            seconds_of_diff = diff_between_current_and_past.total_seconds()
+            # diff_between_current_and_past = current_time - response['Item']['time']
+            # seconds_of_diff = diff_between_current_and_past.total_seconds()
 
             line_bot_api.reply_message(
                 event.reply_token,
