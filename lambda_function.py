@@ -217,7 +217,7 @@ def on_postback(event):
         elif response['Item']['vacancy'] == False: # 誰も入っていないとき
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text='お風呂を「空き」にしたよ！')
+                messages=TextSendMessage(text='お風呂を「空き」にしたよ！' + current_time)
             )
     elif postback_msg == 'm_check':
         # DynamoDBへのgetItem処理実行
