@@ -119,7 +119,7 @@ def on_postback(event):
             }
             table.update_item(**option)
         elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # 誰かが入っている、かつ、それが他人のときは
-            if integer_of_diff > 2700:  # 45分以上経過していたら他人の入室を空きに変更する
+            if integer_of_diff > 1:  # 45分以上経過していたら他人の入室を空きに変更する
                 option = {
                     'Key': {
                         'building': 1,
@@ -162,7 +162,7 @@ def on_postback(event):
                 messages=TextSendMessage(text='%i分前からあなたが入浴中にしてます！' % (integer_of_diff))
             )
         elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # もし自分以外の誰かが入浴中になっていたら
-            if integer_of_diff > 2700: # 45分以上経過していたら入室から空きに変更する
+            if integer_of_diff > 1: # 45分以上経過していたら入室から空きに変更する
                 option = {
                     'Key': {
                         'building': 1,
@@ -205,7 +205,7 @@ def on_postback(event):
                 messages=TextSendMessage(text='既に%i分前からあなたが「入浴中」になってます！ゆっくり浸かってきてね！' % (integer_of_diff))
             )
         elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # もし自分ではない他の誰かが入浴中なら
-            if integer_of_diff > 2700: # 45分以上経過していたら他人の入室から自分の入室に変更する
+            if integer_of_diff > 1: # 45分以上経過していたら他人の入室から自分の入室に変更する
                 option = {
                     'Key': {
                         'building': 1,
@@ -285,7 +285,7 @@ def on_postback(event):
             }
             table.update_item(**option)
         elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # 誰かが入っている、かつ、それが他人のときは
-            if integer_of_diff > 2700: # 45分以上経過していたら他人の入室から自分の入室に変更する
+            if integer_of_diff > 1: # 45分以上経過していたら他人の入室から自分の入室に変更する
                 option = {
                     'Key': {
                         'building': 1,
@@ -328,7 +328,7 @@ def on_postback(event):
                 messages=TextSendMessage(text='男風呂は%i分前からあなたが入浴中になっています！' % (integer_of_diff))
             )
         elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # もし自分以外の誰かが入浴中になっていたら
-            if integer_of_diff > 2700: # 45分以上経過していたら入室から空きに変更する
+            if integer_of_diff > 1: # 45分以上経過していたら入室から空きに変更する
                 option = {
                     'Key': {
                         'building': 1,
@@ -372,7 +372,7 @@ def on_postback(event):
                 messages=TextSendMessage(text='もうあなたが%i分前から「入浴中」になってます！ゆっくり浸かってきてね！' % (integer_of_diff))
             )
         elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # もし自分ではない他の誰かが入浴中なら
-            if integer_of_diff > 2700: # 45分以上経過していたら他人の入室から自分の入室に変更する
+            if integer_of_diff > 1: # 45分以上経過していたら他人の入室から自分の入室に変更する
                 option = {
                     'Key': {
                         'building': 1,
