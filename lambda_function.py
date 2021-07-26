@@ -94,7 +94,11 @@ def on_postback(event):
     if postback_msg == 'f_out':
         #DynamoDBへのgetItem処理実行
         response = table.get_item(Key={'building': 1, 'gender': 1})
-        # 現在の時刻取得
+
+        # DBのtimeとcurrent_timeの差分を計測し、秒数を分に変換する
+        diff_between_current_and_past = (datetime.strptime(current_time,'%Y-%m-%dT%H:%M:%S') - datetime.strptime(response['Item']['time'],'%Y-%m-%dT%H:%M:%S')).seconds
+        integer_of_diff = math.floor(diff_between_current_and_past / 60)
+
         if response['Item']['vacancy'] == True and response['Item']['user_id'] == postback_user_id: # 誰かが入っている、かつ、それが他人でないとき(自分)のみ空室にできる
             line_bot_api.reply_message(
                 event.reply_token,
@@ -120,11 +124,9 @@ def on_postback(event):
             }
             table.update_item(**option)
         elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # 誰かが入っている、かつ、それが他人のときは
-            diff_between_current_and_past = (datetime.strptime(current_time,'%Y-%m-%dT%H:%M:%S') - datetime.strptime(response['Item']['time'],'%Y-%m-%dT%H:%M:%S')).seconds
-            integer_of_diff = math.floor(diff_between_current_and_past / 60) # 秒数を分に変換する
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text='他の人が入っているときは「out」を選択できません..！今入浴中の方は' + integer_of_diff + '前に入浴し始めました！')
+                messages=TextSendMessage(text='他の人が入っているときは「out」を選択できません..！今入浴中の方は%i分前に入浴し始めました！' % (integer_of_diff))
             )
         elif response['Item']['vacancy'] == False: # 誰かが入っている、かつ、それが他人のときは
             line_bot_api.reply_message(
@@ -134,9 +136,12 @@ def on_postback(event):
     elif postback_msg == 'f_check':
         # DynamoDBへのgetItem処理実行
         response = table.get_item(Key={'building': 1, 'gender': 1})
+
+        # DBのtimeとcurrent_timeの差分を計測し、秒数を分に変換する
+        diff_between_current_and_past = (datetime.strptime(current_time,'%Y-%m-%dT%H:%M:%S') - datetime.strptime(response['Item']['time'],'%Y-%m-%dT%H:%M:%S')).seconds
+        integer_of_diff = math.floor(diff_between_current_and_past / 60)
+
         if response['Item']['vacancy'] == True and response['Item']['user_id'] == postback_user_id: # もし自分が入浴中になっていたら
-            diff_between_current_and_past = (datetime.strptime(current_time,'%Y-%m-%dT%H:%M:%S') - datetime.strptime(response['Item']['time'],'%Y-%m-%dT%H:%M:%S')).seconds
-            integer_of_diff = math.floor(diff_between_current_and_past / 60) # 秒数を分に変換する
             line_bot_api.reply_message(
                 event.reply_token,
                 messages=TextSendMessage(text='%i分前からあなたが入浴中にしてます！' % (integer_of_diff))
@@ -144,7 +149,7 @@ def on_postback(event):
         elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # もし自分以外の誰かが入浴中になっていたら
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text="女風呂は誰かが入浴中です！")
+                messages=TextSendMessage(text='女風呂は%i分前から誰かが入浴中です！' % (integer_of_diff))
             )
         elif response['Item']['vacancy'] == False:
             line_bot_api.reply_message(
@@ -154,15 +159,20 @@ def on_postback(event):
     elif postback_msg == 'f_in':
         # DynamoDBへのgetItem処理実行
         response = table.get_item(Key={'building': 1, 'gender': 1})
+
+        # DBのtimeとcurrent_timeの差分を計測し、秒数を分に変換する
+        diff_between_current_and_past = (datetime.strptime(current_time,'%Y-%m-%dT%H:%M:%S') - datetime.strptime(response['Item']['time'],'%Y-%m-%dT%H:%M:%S')).seconds
+        integer_of_diff = math.floor(diff_between_current_and_past / 60)
+
         if response['Item']['vacancy'] == True and response['Item']['user_id'] == postback_user_id: # もし誰かが入浴中かつその人が自分なら
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text="もうあなたが「入浴中」になってます！ゆっくり浸かってきてね！")
+                messages=TextSendMessage(text='既に%i分前からあなたが「入浴中」になってます！ゆっくり浸かってきてね！' % (integer_of_diff))
             )
         elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # もし自分ではない他の誰かが入浴中なら
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text="女風呂は誰かが入浴中なので今は入浴できません..！上がるまで少しお待ちを🙇‍♂")
+                messages=TextSendMessage(text='女風呂は%i分前から誰かが入浴中なので今は入浴できません..！上がるまで少しお待ちを🙇‍♂' % (integer_of_diff))
             )
         elif response['Item']['vacancy'] == False: # 誰も入浴していないなら
             # DynamoDBへのPut処理実行
@@ -191,6 +201,11 @@ def on_postback(event):
     elif postback_msg == 'm_out':
         #DynamoDBへのgetItem処理実行
         response = table.get_item(Key={'building': 1, 'gender': 2})
+
+        # DBのtimeとcurrent_timeの差分を計測し、秒数を分に変換する
+        diff_between_current_and_past = (datetime.strptime(current_time,'%Y-%m-%dT%H:%M:%S') - datetime.strptime(response['Item']['time'],'%Y-%m-%dT%H:%M:%S')).seconds
+        integer_of_diff = math.floor(diff_between_current_and_past / 60)
+
         if response['Item']['vacancy'] == True and response['Item']['user_id'] == postback_user_id: # 誰かが入っている、かつ、それが他人でないとき(自分)のみ空室にできる
             line_bot_api.reply_message(
                 event.reply_token,
@@ -218,7 +233,7 @@ def on_postback(event):
         elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # 誰かが入っている、かつ、それが他人のときは
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text='他の人が入っているときは「out」を選択できません..！')
+                messages=TextSendMessage(text='他の人が入っているときは「out」を選択できません..！今入浴中の方は%i分前に入浴し始めました！' % (integer_of_diff))
             )
         elif response['Item']['vacancy'] == False: # 誰も入っていないとき
             line_bot_api.reply_message(
@@ -228,15 +243,20 @@ def on_postback(event):
     elif postback_msg == 'm_check':
         # DynamoDBへのgetItem処理実行
         response = table.get_item(Key={'building': 1, 'gender': 2})
+
+        # DBのtimeとcurrent_timeの差分を計測し、秒数を分に変換する
+        diff_between_current_and_past = (datetime.strptime(current_time,'%Y-%m-%dT%H:%M:%S') - datetime.strptime(response['Item']['time'],'%Y-%m-%dT%H:%M:%S')).seconds
+        integer_of_diff = math.floor(diff_between_current_and_past / 60)
+
         if response['Item']['vacancy'] == True and response['Item']['user_id'] == postback_user_id: # もし自分が入浴中になっていたら
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text="男風呂はあなたが入浴中になっています！")
+                messages=TextSendMessage(text='男風呂は%i分前からあなたが入浴中になっています！' % (integer_of_diff))
             )
         elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # もし自分以外の誰かが入浴中になっていたら
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text="男風呂は誰かが入浴中です！")
+                messages=TextSendMessage(text='男風呂は%i分前から誰かが入浴中です！' % (integer_of_diff))
             )
         elif response['Item']['vacancy'] == False:
             line_bot_api.reply_message(
@@ -247,15 +267,20 @@ def on_postback(event):
     elif postback_msg == 'm_in':
         # DynamoDBへのgetItem処理実行
         response = table.get_item(Key={'building': 1, 'gender': 2})
+
+        # DBのtimeとcurrent_timeの差分を計測し、秒数を分に変換する
+        diff_between_current_and_past = (datetime.strptime(current_time,'%Y-%m-%dT%H:%M:%S') - datetime.strptime(response['Item']['time'],'%Y-%m-%dT%H:%M:%S')).seconds
+        integer_of_diff = math.floor(diff_between_current_and_past / 60)
+        
         if response['Item']['vacancy'] == True and response['Item']['user_id'] == postback_user_id: # もし誰かが入浴中かつその人が自分なら
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text="もうあなたが「入浴中」になってます！ゆっくり浸かってきてね！")
+                messages=TextSendMessage(text='もうあなたが%i分前から「入浴中」になってます！ゆっくり浸かってきてね！' % (integer_of_diff))
             )
         elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # もし自分ではない他の誰かが入浴中なら
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text="女風呂は誰かが入浴中なので今は入浴できません..！上がるまで少しお待ちを🙇‍♂")
+                messages=TextSendMessage(text='女風呂は%i分前から誰かが入浴中なので今は入浴できません..！上がるまで少しお待ちを🙇‍♂' % (integer_of_diff))
             )
         elif response['Item']['vacancy'] == False: # 誰も入浴していないなら
             # DynamoDBへのPut処理実行
