@@ -104,34 +104,49 @@ def on_postback(event):
                 event.reply_token,
                 messages=TextSendMessage(text='お風呂を「空き」にしたよ！')
             )
-            # DynamoDBへのPut処理実行
             option = {
                 'Key': {
                     'building': 1,
                     'gender': 1
                 },
-                'UpdateExpression': 'set #vacancy = :v, #user_id = :u, #time = :t',
+                'UpdateExpression': 'set #vacancy = :v',
                 'ExpressionAttributeNames': {
-                    '#vacancy': 'vacancy',
-                    '#user_id': 'user_id',
-                    '#time': 'time'
+                    '#vacancy': 'vacancy'
                 },
                 'ExpressionAttributeValues': {
-                    ':v': False,
-                    ':u': postback_user_id,
-                    ':t': current_time
+                    ':v': False
                 }
             }
             table.update_item(**option)
         elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # 誰かが入っている、かつ、それが他人のときは
+            if integer_of_diff > 2700:  # 45分以上経過していたら他人の入室を空きに変更する
+                option = {
+                    'Key': {
+                        'building': 1,
+                        'gender': 1
+                    },
+                    'UpdateExpression': 'set #vacancy = :v',
+                    'ExpressionAttributeNames': {
+                        '#vacancy': 'vacancy'
+                    },
+                    'ExpressionAttributeValues': {
+                        ':v': False
+                    }
+                }
+                table.update_item(**option)
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    messages=TextSendMessage(text='女風呂は45分以上も前から誰かが入浴中ですので空きに変更しました！お風呂に入りたいときはピンク色のinを選択してね')
+                )
+            else:   # 45分以上経過していないなら
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    messages=TextSendMessage(text='他の人が入っているときは「out」を選択できません..！今入浴中の方は%i分前に入浴し始めました！' % (integer_of_diff))
+                )
+        elif response['Item']['vacancy'] == False: # 誰も入っていない時は
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text='他の人が入っているときは「out」を選択できません..！今入浴中の方は%i分前に入浴し始めました！' % (integer_of_diff))
-            )
-        elif response['Item']['vacancy'] == False: # 誰かが入っている、かつ、それが他人のときは
-            line_bot_api.reply_message(
-                event.reply_token,
-                messages=TextSendMessage(text='お風呂を「空き」にしたよ！')
+                messages=TextSendMessage(text='お風呂は既に「空き」だよ！')
             )
     elif postback_msg == 'f_check':
         # DynamoDBへのgetItem処理実行
@@ -147,14 +162,34 @@ def on_postback(event):
                 messages=TextSendMessage(text='%i分前からあなたが入浴中にしてます！' % (integer_of_diff))
             )
         elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # もし自分以外の誰かが入浴中になっていたら
-            line_bot_api.reply_message(
-                event.reply_token,
-                messages=TextSendMessage(text='女風呂は%i分前から誰かが入浴中です！' % (integer_of_diff))
-            )
+            if integer_of_diff > 2700: # 45分以上経過していたら入室から空きに変更する
+                option = {
+                    'Key': {
+                        'building': 1,
+                        'gender': 1
+                    },
+                    'UpdateExpression': 'set #vacancy = :v',
+                    'ExpressionAttributeNames': {
+                        '#vacancy': 'vacancy'
+                    },
+                    'ExpressionAttributeValues': {
+                        ':v': False
+                    }
+                }
+                table.update_item(**option)
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    messages=TextSendMessage(text='女風呂は45分以上も前から誰かが入浴中ですので空きに変更しました！お風呂に入りたいときはピンク色のinを選択してね')
+                )
+            else: # 45分以上経過していないなら入室から変更なし
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    messages=TextSendMessage(text='女風呂は%i分前から誰かが入浴中です！' % (integer_of_diff))
+                )
         elif response['Item']['vacancy'] == False:
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text="女風呂は誰も入浴してません！入れます！")
+                messages=TextSendMessage(text="女風呂は誰も入浴してません！入れます！お風呂に入りたいときはピンク色のinを選択してね")
             )
     elif postback_msg == 'f_in':
         # DynamoDBへのgetItem処理実行
@@ -170,10 +205,34 @@ def on_postback(event):
                 messages=TextSendMessage(text='既に%i分前からあなたが「入浴中」になってます！ゆっくり浸かってきてね！' % (integer_of_diff))
             )
         elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # もし自分ではない他の誰かが入浴中なら
-            line_bot_api.reply_message(
-                event.reply_token,
-                messages=TextSendMessage(text='女風呂は%i分前から誰かが入浴中なので今は入浴できません..！上がるまで少しお待ちを🙇‍♂' % (integer_of_diff))
-            )
+            if integer_of_diff > 2700: # 45分以上経過していたら他人の入室から自分の入室に変更する
+                option = {
+                    'Key': {
+                        'building': 1,
+                        'gender': 1
+                    },
+                    'UpdateExpression': 'set #vacancy = :v, #user_id = :u, #time = :t',
+                    'ExpressionAttributeNames': {
+                        '#vacancy': 'vacancy',
+                        '#user_id': 'user_id',
+                        '#time': 'time'
+                    },
+                    'ExpressionAttributeValues': {
+                        ':v': True,
+                        ':u': postback_user_id,
+                        ':t': current_time
+                    }
+                }
+                table.update_item(**option)
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    messages=TextSendMessage(text='女風呂は45分以上も前から誰かが入浴中ですのでもう空いていると思うので、あなたを入浴中にしました！')
+                )
+            else: # 45分以上経過していないなら他人の入室から変更しない
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    messages=TextSendMessage(text='女風呂は%i分前から誰かが入浴中なので今は入浴できません..！上がるまで少しお待ちを🙇‍♂' % (integer_of_diff))
+                )
         elif response['Item']['vacancy'] == False: # 誰も入浴していないなら
             # DynamoDBへのPut処理実行
             option = {
@@ -209,36 +268,51 @@ def on_postback(event):
         if response['Item']['vacancy'] == True and response['Item']['user_id'] == postback_user_id: # 誰かが入っている、かつ、それが他人でないとき(自分)のみ空室にできる
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text='お風呂を「空き」にしたよ！')
+                messages=TextSendMessage(text='男風呂を「空き」にしたよ！')
             )
-            # DynamoDBへのPut処理実行
             option = {
                 'Key': {
                     'building': 1,
                     'gender': 2
                 },
-                'UpdateExpression': 'set #vacancy = :v, #user_id = :u, #time = :t',
+                'UpdateExpression': 'set #vacancy = :v',
                 'ExpressionAttributeNames': {
-                    '#vacancy': 'vacancy',
-                    '#user_id': 'user_id',
-                    '#time': 'time'
+                    '#vacancy': 'vacancy'
                 },
                 'ExpressionAttributeValues': {
-                    ':v': False,
-                    ':u': postback_user_id,
-                    ':t': current_time
+                    ':v': False
                 }
             }
             table.update_item(**option)
         elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # 誰かが入っている、かつ、それが他人のときは
-            line_bot_api.reply_message(
-                event.reply_token,
-                messages=TextSendMessage(text='他の人が入っているときは「out」を選択できません..！今入浴中の方は%i分前に入浴し始めました！' % (integer_of_diff))
-            )
+            if integer_of_diff > 2700: # 45分以上経過していたら他人の入室から自分の入室に変更する
+                option = {
+                    'Key': {
+                        'building': 1,
+                        'gender': 2
+                    },
+                    'UpdateExpression': 'set #vacancy = :v',
+                    'ExpressionAttributeNames': {
+                        '#vacancy': 'vacancy'
+                    },
+                    'ExpressionAttributeValues': {
+                        ':v': False
+                    }
+                }
+                table.update_item(**option)
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    messages=TextSendMessage(text='男風呂は45分以上も前から誰かが入浴中ですので空きに変更しました！お風呂に入りたいときは青色のinを選択してね')
+                )
+            else:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    messages=TextSendMessage(text='他の人が入っているときは「out」を選択できません..！今入浴中の方は%i分前に入浴し始めました！' % (integer_of_diff))
+                )
         elif response['Item']['vacancy'] == False: # 誰も入っていないとき
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text='お風呂を「空き」にしたよ！' + current_time)
+                messages=TextSendMessage(text='お風呂は既に「空き」だよ！')
             )
     elif postback_msg == 'm_check':
         # DynamoDBへのgetItem処理実行
@@ -254,14 +328,34 @@ def on_postback(event):
                 messages=TextSendMessage(text='男風呂は%i分前からあなたが入浴中になっています！' % (integer_of_diff))
             )
         elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # もし自分以外の誰かが入浴中になっていたら
-            line_bot_api.reply_message(
-                event.reply_token,
-                messages=TextSendMessage(text='男風呂は%i分前から誰かが入浴中です！' % (integer_of_diff))
-            )
+            if integer_of_diff > 2700: # 45分以上経過していたら入室から空きに変更する
+                option = {
+                    'Key': {
+                        'building': 1,
+                        'gender': 2
+                    },
+                    'UpdateExpression': 'set #vacancy = :v',
+                    'ExpressionAttributeNames': {
+                        '#vacancy': 'vacancy'
+                    },
+                    'ExpressionAttributeValues': {
+                        ':v': False
+                    }
+                }
+                table.update_item(**option)
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    messages=TextSendMessage(text='女風呂は45分以上も前から誰かが入浴中ですので空きに変更しました！お風呂に入りたいときは青色のinを選択してね')
+                )
+            else: # 45分以上経過していないなら入室から変更なし
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    messages=TextSendMessage(text='男風呂は%i分前から誰かが入浴中です！' % (integer_of_diff))
+                )
         elif response['Item']['vacancy'] == False:
             line_bot_api.reply_message(
                 event.reply_token,
-                messages=TextSendMessage(text="男風呂は誰も入浴してません！入れます！")
+                messages=TextSendMessage(text='男風呂は誰も入浴してません！入れます！お風呂に入りたいときは青色のinを選択してね')
             )
             
     elif postback_msg == 'm_in':
@@ -278,10 +372,34 @@ def on_postback(event):
                 messages=TextSendMessage(text='もうあなたが%i分前から「入浴中」になってます！ゆっくり浸かってきてね！' % (integer_of_diff))
             )
         elif response['Item']['vacancy'] == True and response['Item']['user_id'] != postback_user_id: # もし自分ではない他の誰かが入浴中なら
-            line_bot_api.reply_message(
-                event.reply_token,
-                messages=TextSendMessage(text='女風呂は%i分前から誰かが入浴中なので今は入浴できません..！上がるまで少しお待ちを🙇‍♂' % (integer_of_diff))
-            )
+            if integer_of_diff > 2700: # 45分以上経過していたら他人の入室から自分の入室に変更する
+                option = {
+                    'Key': {
+                        'building': 1,
+                        'gender': 2
+                    },
+                    'UpdateExpression': 'set #vacancy = :v, #user_id = :u, #time = :t',
+                    'ExpressionAttributeNames': {
+                        '#vacancy': 'vacancy',
+                        '#user_id': 'user_id',
+                        '#time': 'time'
+                    },
+                    'ExpressionAttributeValues': {
+                        ':v': True,
+                        ':u': postback_user_id,
+                        ':t': current_time
+                    }
+                }
+                table.update_item(**option)
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    messages=TextSendMessage(text='女風呂は45分以上も前から誰かが入浴中ですのでもう空いていると思うので、あなたを入浴中にしました！')
+                )
+            else: # 45分以上経過していないなら他人の入室から変更しない
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    messages=TextSendMessage(text='男風呂は%i分前から誰かが入浴中なので今は入浴できません..！上がるまで少しお待ちを🙇‍♂' % (integer_of_diff))
+                )
         elif response['Item']['vacancy'] == False: # 誰も入浴していないなら
             # DynamoDBへのPut処理実行
             option = {
