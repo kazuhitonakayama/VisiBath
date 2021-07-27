@@ -345,7 +345,7 @@ def on_postback(event):
                 table.update_item(**option)
                 line_bot_api.reply_message(
                     event.reply_token,
-                    messages=TextSendMessage(text='女風呂は45分以上も前から誰かが入浴中ですので空きに変更しました！お風呂に入りたいときは青色のinを選択してね')
+                    messages=TextSendMessage(text='男風呂は45分以上も前から誰かが入浴中ですので空きに変更しました！お風呂に入りたいときは青色のinを選択してね')
                 )
             else: # 45分以上経過していないなら入室から変更なし
                 line_bot_api.reply_message(
